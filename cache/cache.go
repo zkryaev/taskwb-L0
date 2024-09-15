@@ -1,6 +1,6 @@
 package cache
 
-import "github.com/zkryaev/taskwb-nats-stream/models"
+import "github.com/zkryaev/taskwb-L0/models"
 
 type Cache struct {
 	orders map[string]models.Order

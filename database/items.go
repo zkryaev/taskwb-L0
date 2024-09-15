@@ -42,7 +42,7 @@ func AddItem(db *sql.DB, item models.Item, OrderUID string) error {
 }
 
 func GetItems(db *sql.DB, OrderUID string) ([]models.Item, error) {
-	query := "SELECT * FROM payments WHERE order_uid = $1"
+	query := "SELECT * FROM items WHERE order_uid = $1"
 	rows, err := db.Query(query, OrderUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -51,9 +51,11 @@ func GetItems(db *sql.DB, OrderUID string) ([]models.Item, error) {
 		return nil, fmt.Errorf("get items failed: %w", err)
 	}
 	var items []models.Item
+	var uid string
 	for rows.Next() {
 		var item models.Item
 		err := rows.Scan(
+			&uid,
 			&item.ChrtID,
 			&item.TrackNumber,
 			&item.Price,

@@ -2,7 +2,7 @@ package models
 
 type Payment struct {
 	Transaction  string `json:"transaction"`
-	RequsetID    string `json:"request_id"`
+	RequestID    string `json:"request_id"`
 	Currency     string `json:"currency"`
 	Provider     string `json:"provider"`
 	Amount       int    `json:"amount"`

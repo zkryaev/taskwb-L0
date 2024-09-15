@@ -28,12 +28,22 @@ func AddDelivery(db *sql.DB, delivery models.Delivery, OrderUID string) error {
 }
 
 func GetDelivery(db *sql.DB, OrderUID string) (*models.Delivery, error) {
-	query := "SELECT * FROM orders WHERE order_uid = $1"
+	query := "SELECT * FROM deliveries WHERE order_uid = $1"
 
 	row := db.QueryRow(query, OrderUID)
 
 	var delivery models.Delivery
-	err := row.Scan(&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City, &delivery.Address, &delivery.Region, &delivery.Email)
+	var uid string
+	err := row.Scan(
+		&uid,
+		&delivery.Name,
+		&delivery.Phone,
+		&delivery.Zip,
+		&delivery.City,
+		&delivery.Address,
+		&delivery.Region,
+		&delivery.Email,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("delivery not found: %w", err)
