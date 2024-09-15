@@ -2,8 +2,10 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 
-	"github.com/zkryaev/taskwb-nats-stream/models"
+	"github.com/zkryaev/taskwb-L0/models"
 )
 
 func AddPayment(db *sql.DB, payment models.Payment, OrderUID string) error {
@@ -26,4 +28,18 @@ func AddPayment(db *sql.DB, payment models.Payment, OrderUID string) error {
 		return err
 	}
 	return nil
+}
+
+func GetPayment(db *sql.DB, OrderUID string) (*models.Payment, error) {
+	query := "SELECT * FROM payments WHERE order_uid = $1"
+	row := db.QueryRow(query, OrderUID)
+	var payment models.Payment
+	err := row.Scan(&payment.Transaction, &payment.RequsetID, &payment.Provider, &payment.PaymentDT, &payment.GoodsTotal, &payment.DeliveryCost, &payment.CustomFee, &payment.Currency, &payment.Bank, &payment.Amount)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("payment not found: %w", err)
+		}
+		return nil, fmt.Errorf("get payment failed: %w", err)
+	}
+	return &payment, nil
 }

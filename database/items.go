@@ -2,8 +2,10 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 
-	"github.com/zkryaev/taskwb-nats-stream/models"
+	"github.com/zkryaev/taskwb-L0/models"
 )
 
 func AddItems(db *sql.DB, items []models.Item, OrderUID string) (err error) {
@@ -37,4 +39,37 @@ func AddItem(db *sql.DB, item models.Item, OrderUID string) error {
 		return err
 	}
 	return nil
+}
+
+func GetItems(db *sql.DB, OrderUID string) ([]models.Item, error) {
+	query := "SELECT * FROM payments WHERE order_uid = $1"
+	rows, err := db.Query(query, OrderUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("items not found: %w", err)
+		}
+		return nil, fmt.Errorf("get items failed: %w", err)
+	}
+	var items []models.Item
+	for rows.Next() {
+		var item models.Item
+		err := rows.Scan(
+			&item.ChrtID,
+			&item.TrackNumber,
+			&item.Price,
+			&item.Rid,
+			&item.Name,
+			&item.Sale,
+			&item.Size,
+			&item.TotalPrice,
+			&item.NmID,
+			&item.Brand,
+			&item.Status,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }

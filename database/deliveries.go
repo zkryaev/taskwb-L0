@@ -2,8 +2,10 @@ package database
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 
-	"github.com/zkryaev/taskwb-nats-stream/models"
+	"github.com/zkryaev/taskwb-L0/models"
 )
 
 func AddDelivery(db *sql.DB, delivery models.Delivery, OrderUID string) error {
@@ -24,3 +26,25 @@ func AddDelivery(db *sql.DB, delivery models.Delivery, OrderUID string) error {
 	}
 	return nil
 }
+
+func GetDelivery(db *sql.DB, OrderUID string) (*models.Delivery, error) {
+	query := "SELECT * FROM orders WHERE order_uid = $1"
+
+	row := db.QueryRow(query, OrderUID)
+
+	var delivery models.Delivery
+	err := row.Scan(&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City, &delivery.Address, &delivery.Region, &delivery.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("delivery not found: %w", err)
+		}
+		return nil, fmt.Errorf("get delivery failed: %w", err)
+	}
+
+	return &delivery, nil
+}
+
+/*
+func UpdateDelivery(db *sql.DB, delivery models.Delivery, OrderUID string) error {
+
+}*/
