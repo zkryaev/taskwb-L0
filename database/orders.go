@@ -46,6 +46,46 @@ func AddOrder(db *sql.DB, order models.Order) error {
 	return nil
 }
 
+func GetOrders(db *sql.DB) ([]models.Order, error) {
+	query := "SELECT * FROM orders"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get orders: %w", err)
+	}
+	defer rows.Close()
+
+	var orders []models.Order
+	for rows.Next() {
+		var order models.Order
+		err := rows.Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order row: %w", err)
+		}
+
+		delivery, err := GetDelivery(db, order.OrderUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get delivery for order %s: %w", order.OrderUID, err)
+		}
+		order.Delivery = *delivery
+
+		payment, err := GetPayment(db, order.OrderUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get payment for order %s: %w", order.OrderUID, err)
+		}
+		order.Payment = *payment
+
+		items, err := GetItems(db, order.OrderUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get items for order %s: %w", order.OrderUID, err)
+		}
+		order.Items = items
+
+		orders = append(orders, order)
+	}
+
+	return orders, nil
+}
+
 func GetOrder(db *sql.DB, OrderUID string) (*models.Order, error) {
 	query := "SELECT * FROM orders WHERE order_uid = $1"
 	row := db.QueryRow(query, OrderUID)
@@ -53,7 +93,7 @@ func GetOrder(db *sql.DB, OrderUID string) (*models.Order, error) {
 	err := row.Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("order not found: %w", err)
+			return nil, sql.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to get order: %w", err)
 	}

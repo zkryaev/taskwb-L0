@@ -6,7 +6,7 @@ type Cache struct {
 	orders map[string]models.Order
 }
 
-func NewCache() *Cache {
+func New() *Cache {
 	return &Cache{
 		orders: make(map[string]models.Order),
 	}
