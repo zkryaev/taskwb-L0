@@ -1,4 +1,4 @@
-package database
+package config
 
 import (
 	"fmt"
@@ -7,10 +7,16 @@ import (
 )
 
 type Config struct {
-	DB ConfigDatabase `yaml:"db"`
+	DB  ConfigDB  `yaml:"db"`
+	App ConfigApp `yaml:"app"`
 }
 
-type ConfigDatabase struct {
+type ConfigApp struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type ConfigDB struct {
 	Port     string `yaml:"port"`
 	Host     string `yaml:"host"`
 	Name     string `yaml:"name"`

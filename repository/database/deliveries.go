@@ -8,9 +8,9 @@ import (
 	"github.com/zkryaev/taskwb-L0/models"
 )
 
-func AddDelivery(db *sql.DB, delivery models.Delivery, OrderUID string) error {
+func AddDelivery(tx *sql.Tx, delivery models.Delivery, OrderUID string) error {
 	query := `INSERT INTO deliveries ("name", "phone", "zip", "city", "address", "region", "email", "order_uid") VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err := db.Exec(
+	_, err := tx.Exec(
 		query,
 		delivery.Name,
 		delivery.Phone,

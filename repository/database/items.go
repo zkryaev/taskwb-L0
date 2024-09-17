@@ -8,9 +8,9 @@ import (
 	"github.com/zkryaev/taskwb-L0/models"
 )
 
-func AddItems(db *sql.DB, items []models.Item, OrderUID string) (err error) {
+func AddItems(tx *sql.Tx, items []models.Item, OrderUID string) (err error) {
 	for _, item := range items {
-		err = AddItem(db, item, OrderUID)
+		err = AddItem(tx, item, OrderUID)
 		if err != nil {
 			return err
 		}
@@ -18,9 +18,9 @@ func AddItems(db *sql.DB, items []models.Item, OrderUID string) (err error) {
 	return nil
 }
 
-func AddItem(db *sql.DB, item models.Item, OrderUID string) error {
+func AddItem(tx *sql.Tx, item models.Item, OrderUID string) error {
 	query := `INSERT INTO "items"("chrt_id", "track_number", "price", "rid", "name", "sale", "size", "total_price", "nm_id", "brand", "status", "order_uid") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
-	_, err := db.Exec(
+	_, err := tx.Exec(
 		query,
 		item.ChrtID,
 		item.TrackNumber,

@@ -1,4 +1,4 @@
-package server
+package controller
 
 import (
 	"encoding/json"
@@ -6,15 +6,16 @@ import (
 	"net/http"
 
 	"github.com/zkryaev/taskwb-L0/cache"
+	"github.com/zkryaev/taskwb-L0/repository/config"
 )
 
 type Server struct {
-	cfg   ConfigApp
+	cfg   config.ConfigApp
 	Cache *cache.Cache
 }
 
 func New(cfgPath string, cache *cache.Cache) *Server {
-	cfg := Load(cfgPath)
+	cfg := config.Load(cfgPath)
 	return &Server{
 		cfg:   cfg.App,
 		Cache: cache,
@@ -22,7 +23,6 @@ func New(cfgPath string, cache *cache.Cache) *Server {
 }
 
 func (s *Server) Launch() error {
-	fmt.Printf("---SERVER---\nHost: %s\nPort: %s\n------------\n", s.cfg.Host, s.cfg.Port)
 	http.HandleFunc("/order", s.GetOrderHandler)
 	err := http.ListenAndServe(s.cfg.Host+":"+s.cfg.Port, nil)
 	if err != nil {

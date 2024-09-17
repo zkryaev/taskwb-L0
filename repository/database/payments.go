@@ -8,9 +8,10 @@ import (
 	"github.com/zkryaev/taskwb-L0/models"
 )
 
-func AddPayment(db *sql.DB, payment models.Payment, OrderUID string) error {
+func AddPayment(tx *sql.Tx, payment models.Payment, OrderUID string) error {
+
 	query := `INSERT INTO payments ("transaction", "request_id", "currency", "provider", "amount", "payment_dt", "bank", "delivery_cost", "goods_total", "custom_fee", "order_uid") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
-	_, err := db.Exec(
+	_, err := tx.Exec(
 		query,
 		payment.Transaction,
 		payment.RequestID,

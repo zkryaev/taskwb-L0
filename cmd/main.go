@@ -1,11 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"sync"
 
 	"github.com/zkryaev/taskwb-L0/cache"
-	"github.com/zkryaev/taskwb-L0/database"
-	"github.com/zkryaev/taskwb-L0/server"
+	"github.com/zkryaev/taskwb-L0/controller"
+	"github.com/zkryaev/taskwb-L0/repository"
+	"github.com/zkryaev/taskwb-L0/repository/config"
+	"go.uber.org/zap"
 )
 
 var (
@@ -13,39 +16,52 @@ var (
 )
 
 func main() {
-	fmt.Println("Starting...")
-	cfg := database.Load(cfgPath)
-	db, err := database.Connect(cfg)
-	defer db.Close()
-	defer fmt.Println("DB: disconnected")
+	// Создаем логгер в продакшн-режиме (JSON-формат по умолчанию)
+	logger, err := zap.NewProduction()
 	if err != nil {
-		fmt.Printf("Connection to DB is failed: %v\n", err)
-		return
+		log.Fatalf("Failed to create logger: %v", err)
 	}
-	fmt.Println("DB: connected!")
-	fmt.Printf("---POSTGRE---\nHost: %s\nPort: %s\nUser: %s\nName: %s\n", cfg.DB.Host, cfg.DB.Port, cfg.DB.User, cfg.DB.Name)
+	defer logger.Sync() // Сбрасываем буферизированные логи
 
-	cache := cache.New()
-	orders, err := database.GetOrders(db)
+	logger.Info("Starting application...")
+
+	// Загружаем конфигурацию
+	cfg := config.Load(cfgPath)
+
+	// Подключаемся к базе данных
+	ordersRepo, err := repository.New(cfg)
 	if err != nil {
-		fmt.Println("failed to refil cache from db: %w", err)
+		logger.Error("Connection to DB failed", zap.Error(err))
 		return
 	}
+	defer ordersRepo.DB.Close()
+	logger.Info("DB connected successfully", zap.String("host", cfg.DB.Host), zap.String("port", cfg.DB.Port), zap.String("db", cfg.DB.Name), zap.String("user", cfg.DB.User))
+
+	// Инициализируем кэш
+	cache := cache.New()
+
+	// Получаем заказы из базы данных и заполняем кэш
+	orders, err := ordersRepo.GetOrders()
+	if err != nil {
+		logger.Error("Failed to refill cache from DB", zap.Error(err))
+		return
+	}
+
 	for _, order := range orders {
 		cache.SaveOrder(order)
+		logger.Info("Order cached", zap.String("order_uid", order.OrderUID))
 	}
 
-	s := server.New(cfgPath, cache)
-	s.Launch()
+	// Запуск сервера
+	s := controller.New(cfgPath, cache)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s.Launch()
+	}()
+	logger.Info("Server launched")
+	wg.Wait()
+
+	logger.Info("Application shutdown")
 }
-
-/*var objectNum uint = 5
-orders := script.GenerateObjects(objectNum)
-for i := range objectNum {
-	err := database.AddOrder(db, orders[i])
-	if err != nil {
-		db.Close()
-		log.Fatal(err)
-		return
-	}
-}*/

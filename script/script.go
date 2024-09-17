@@ -8,6 +8,21 @@ import (
 	"github.com/zkryaev/taskwb-L0/models"
 )
 
+/* Этот код в main
+
+var objectNum uint = 1
+	MockOrders := script.GenerateObjects(objectNum)
+	for i := range objectNum {
+		err = ordersRepo.AddOrder(MockOrders[i])
+		if err != nil {
+			ordersRepo.DB.Close()
+			log.Fatal(err)
+			return
+		}
+	}
+
+*/
+
 func GenerateObjects(cnt uint) []models.Order {
 	rand.Seed(time.Now().UnixNano()) // Устанавливаем начальное значение для генератора случайных чисел
 	var orders []models.Order
