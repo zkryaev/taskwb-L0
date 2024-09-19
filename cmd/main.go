@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
-	"sync"
+	"os"
+	"os/signal"
 
 	"github.com/zkryaev/taskwb-L0/cache"
 	"github.com/zkryaev/taskwb-L0/controller"
+	"github.com/zkryaev/taskwb-L0/kafka/consumer"
 	"github.com/zkryaev/taskwb-L0/repository"
 	"github.com/zkryaev/taskwb-L0/repository/config"
 	"go.uber.org/zap"
@@ -16,12 +18,11 @@ var (
 )
 
 func main() {
-	// Создаем логгер в продакшн-режиме (JSON-формат по умолчанию)
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("Failed to create logger: %v", err)
 	}
-	defer logger.Sync() // Сбрасываем буферизированные логи
+	defer logger.Sync()
 
 	logger.Info("Starting application...")
 
@@ -35,7 +36,13 @@ func main() {
 		return
 	}
 	defer ordersRepo.DB.Close()
-	logger.Info("DB connected successfully", zap.String("host", cfg.DB.Host), zap.String("port", cfg.DB.Port), zap.String("db", cfg.DB.Name), zap.String("user", cfg.DB.User))
+	logger.Info(
+		"DB connected successfully",
+		zap.String("host", cfg.DB.Host),
+		zap.String("port", cfg.DB.Port),
+		zap.String("db", cfg.DB.Name),
+		zap.String("user", cfg.DB.User),
+	)
 
 	// Инициализируем кэш
 	cache := cache.New()
@@ -54,14 +61,20 @@ func main() {
 
 	// Запуск сервера
 	s := controller.New(cfgPath, cache)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		s.Launch()
 	}()
-	logger.Info("Server launched")
-	wg.Wait()
-
+	logger.Info(
+		"Server launched",
+		zap.String("host", cfg.App.Host),
+		zap.String("port", cfg.App.Port),
+	)
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, os.Interrupt)
+	//connect consumer
+	err = consumer.Subscribe(cache, ordersRepo, *logger, sigchan)
+	if err != nil {
+		logger.Fatal("consumer error:", zap.Error(err))
+	}
 	logger.Info("Application shutdown")
 }

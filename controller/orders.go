@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/zkryaev/taskwb-L0/cache"
 	"github.com/zkryaev/taskwb-L0/repository/config"
 )
@@ -23,16 +24,20 @@ func New(cfgPath string, cache *cache.Cache) *Server {
 }
 
 func (s *Server) Launch() error {
-	http.HandleFunc("/order", s.GetOrderHandler)
+	r := mux.NewRouter()
+	r.HandleFunc("/order/{order_uid}", s.GetOrderHandler)
+	http.Handle("/", r)
 	err := http.ListenAndServe(s.cfg.Host+":"+s.cfg.Port, nil)
 	if err != nil {
 		return fmt.Errorf("failed to launch server: %w", err)
 	}
+
 	return nil
 }
 
 func (s *Server) GetOrderHandler(w http.ResponseWriter, r *http.Request) {
-	orderUID := r.URL.Query().Get("id")
+	vars := mux.Vars(r)
+	orderUID := vars["order_uid"]
 	if order, ok := s.Cache.GetOrder(orderUID); ok {
 		orderJSON, _ := json.MarshalIndent(order, "", "    ")
 		w.Header().Set("Content-Type", "application/json")
@@ -40,6 +45,6 @@ func (s *Server) GetOrderHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(orderJSON)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Order not found"))
+		w.Write([]byte(fmt.Sprintf("\nOrderUID: <%s> not found!\n", orderUID)))
 	}
 }
