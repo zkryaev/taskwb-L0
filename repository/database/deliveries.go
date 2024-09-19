@@ -46,7 +46,7 @@ func GetDelivery(db *sql.DB, OrderUID string) (*models.Delivery, error) {
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("delivery not found: %w", err)
+			return nil, fmt.Errorf("get delivery failed: %w", err)
 		}
 		return nil, fmt.Errorf("get delivery failed: %w", err)
 	}

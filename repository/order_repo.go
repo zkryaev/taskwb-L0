@@ -96,12 +96,24 @@ func (o *OrdersRepo) GetOrder(OrderUID string) (*models.Order, error) {
 	query := "SELECT * FROM orders WHERE order_uid = $1"
 	row := o.DB.QueryRow(query, OrderUID)
 	var order models.Order
-	err := row.Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard)
+	err := row.Scan(
+		&order.OrderUID,
+		&order.TrackNumber,
+		&order.Entry,
+		&order.Locale,
+		&order.InternalSignature,
+		&order.CustomerID,
+		&order.DeliveryService,
+		&order.Shardkey,
+		&order.SmID,
+		&order.DateCreated,
+		&order.OofShard,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
+			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get order: %w", err)
+		return nil, fmt.Errorf("failed to get orders: %w", err)
 	}
 	delivery, err := database.GetDelivery(o.DB, OrderUID)
 	if err != nil {
@@ -128,6 +140,9 @@ func (o *OrdersRepo) GetOrders() ([]models.Order, error) {
 	query := "SELECT * FROM orders"
 	rows, err := o.DB.Query(query)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get orders: %w", err)
 	}
 	defer rows.Close()

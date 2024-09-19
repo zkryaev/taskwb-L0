@@ -31,7 +31,6 @@ func (s *Server) Launch() error {
 	if err != nil {
 		return fmt.Errorf("failed to launch server: %w", err)
 	}
-
 	return nil
 }
 
