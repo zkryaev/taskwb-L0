@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/IBM/sarama"
@@ -16,12 +17,12 @@ func Subscribe(cache *cache.Cache, db *repository.OrdersRepo, logger zap.Logger,
 
 	worker, err := ConnectConsumer([]string{"localhost:9092"})
 	if err != nil {
-		return err
+		return fmt.Errorf("connect_consumer failed: %w", err)
 	}
 
 	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetOldest)
 	if err != nil {
-		return err
+		return fmt.Errorf("consume_partition failed: %w", err)
 	}
 
 	doneCh := make(chan struct{})
@@ -37,7 +38,7 @@ func Subscribe(cache *cache.Cache, db *repository.OrdersRepo, logger zap.Logger,
 					continue
 				}
 				if _, found := cache.GetOrder(order.OrderUID); found {
-					logger.Info("order exist")
+					logger.Info("order exist, didn't add")
 					continue
 				}
 				if err := db.AddOrder(order); err != nil {
@@ -51,6 +52,7 @@ func Subscribe(cache *cache.Cache, db *repository.OrdersRepo, logger zap.Logger,
 			}
 		}
 	}()
+	logger.Info("Consumer subscribed to Kafka!")
 	<-doneCh
 	close(doneCh)
 	if err := worker.Close(); err != nil {

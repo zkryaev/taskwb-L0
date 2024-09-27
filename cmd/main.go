@@ -54,9 +54,10 @@ func main() {
 		return
 	}
 
+	logger.Info("Restoring the cache...")
 	for _, order := range orders {
 		cache.SaveOrder(order)
-		logger.Info("Order cached", zap.String("order_uid", order.OrderUID))
+		logger.Info("Cached", zap.String("order_uid", order.OrderUID))
 	}
 
 	// Запуск сервера

@@ -33,10 +33,13 @@ func GenerateOrder() models.Order {
 		Status:      rand.Intn(5),
 	}
 
+	currencies := []string{"USD", "RUB", "EUR"}
+	currency := currencies[rand.Intn(len(currencies))]
+
 	payment := models.Payment{
 		Transaction:  randomString(10),
 		RequestID:    randomString(8),
-		Currency:     "USD",
+		Currency:     currency,
 		Provider:     randomString(6),
 		Amount:       rand.Intn(10000),
 		PaymentDT:    int(time.Now().Unix()),
@@ -46,6 +49,8 @@ func GenerateOrder() models.Order {
 		CustomFee:    rand.Intn(100),
 	}
 
+	localies := []string{"en", "ru"}
+	locale := localies[rand.Intn(len(localies))]
 	order := models.Order{
 		OrderUID:          randomString(12),
 		TrackNumber:       randomString(10),
@@ -53,7 +58,7 @@ func GenerateOrder() models.Order {
 		Delivery:          delivery,
 		Payment:           payment,
 		Items:             []models.Item{item},
-		Locale:            "en",
+		Locale:            locale,
 		InternalSignature: randomString(8),
 		CustomerID:        randomString(8),
 		DeliveryService:   randomString(5),
