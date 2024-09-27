@@ -4,32 +4,77 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/IBM/sarama"
+	"github.com/zkryaev/taskwb-L0/repository"
+	"github.com/zkryaev/taskwb-L0/repository/config"
 	"github.com/zkryaev/taskwb-L0/script"
+)
+
+var (
+	cfgPath = "config/config.yaml"
 )
 
 func main() {
 	topic := "orders"
+
+	cfg := config.Load(cfgPath)
+	ordersRepo, err := repository.New(cfg)
+	if err != nil {
+		log.Fatal("Connection to DB failed", err)
+	}
+	defer ordersRepo.DB.Close()
+	orders, err := ordersRepo.GetOrders()
+	if err != nil {
+		log.Fatal("Failed to get old orders from DB", err)
+		return
+	}
 	log.Println("Producer is launched!")
-	log.Println("Type 'exit' to quit:")
 	for {
-		// Спрашиваем у пользователя, что он хочет сделать
+		log.Println("Type 's' to generate order")
+		log.Println("Type 'c' to send copy")
+		log.Println("Type 'exit' to quit")
 		var input string
+		var orderJSON []byte
 		fmt.Scanln(&input)
 
-		// Если пользователь ввел "exit", завершаем программу
 		if input == "exit" {
 			fmt.Println("Exiting the program...")
 			break
 		}
 
-		// Генерация и отправка заказа
-		order := script.GenerateOrder()
-		orderJSON, err := json.Marshal(order)
-		if err != nil {
-			log.Printf("Failed to convert order to JSON: %s", err)
-			continue
+		// send = сгенерировать
+		if input == "s" {
+			orderGenerated := script.GenerateOrder()
+			orderJSON, err = json.Marshal(orderGenerated)
+			if err != nil {
+				log.Printf("Failed to convert order to JSON: %s", err)
+				continue
+			}
+		}
+
+		if input == "c" {
+			log.Println("Choose 1 of old orders:")
+			for i := 0; i < len(orders); i++ {
+				fmt.Println(i, orders[i].OrderUID)
+			}
+			var indstr string
+			fmt.Scanln(&indstr)
+			ind, err := strconv.Atoi(indstr)
+			if err != nil {
+				log.Println("Entered is not a number!")
+				continue
+			}
+			if ind < 0 || ind > len(orders) {
+				log.Println("Entered number isn't in range of orders!")
+				continue
+			}
+			orderJSON, err = json.Marshal(orders[ind])
+			if err != nil {
+				log.Printf("Failed to convert order to JSON: %s", err)
+				continue
+			}
 		}
 
 		err = PushOrderToQueue(topic, orderJSON)
@@ -38,7 +83,7 @@ func main() {
 			continue
 		}
 
-		log.Printf("Successfully sent order: %s", order.OrderUID)
+		log.Printf("Successfully sent order")
 	}
 }
 

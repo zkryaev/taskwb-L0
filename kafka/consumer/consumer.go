@@ -20,7 +20,7 @@ func Subscribe(cache *cache.Cache, db *repository.OrdersRepo, logger zap.Logger,
 		return fmt.Errorf("connect_consumer failed: %w", err)
 	}
 
-	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetOldest)
+	consumer, err := worker.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
 		return fmt.Errorf("consume_partition failed: %w", err)
 	}
