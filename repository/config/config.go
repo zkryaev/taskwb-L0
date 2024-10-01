@@ -22,6 +22,7 @@ type ConfigDB struct {
 	Name     string `yaml:"name"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+	Schema string `yaml:"schema"`
 }
 
 func Load(cfgPath string) *Config {
