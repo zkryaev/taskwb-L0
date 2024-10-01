@@ -8,3 +8,4 @@ db:
   name: orders_db
   user: postgres
   password: 1234
+  schema: postgres
