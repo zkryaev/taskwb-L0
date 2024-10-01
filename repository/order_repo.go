@@ -24,8 +24,8 @@ func New(cfg *config.Config) (*OrdersRepo, error) {
 		cfg.DB.Password,
 		cfg.DB.Name,
 	)
-
-	db, err := sql.Open("postgres", connStr)
+postgres
+	db, err := sql.Open(cfg.Schema, connStr)
 	if err != nil {
 		return nil, err
 	}
